@@ -1,0 +1,45 @@
+# Liste des services que Docker Compose doit gérer.
+services:
+  db:
+    # Image officielle de MariaDB, utilisée pour la base de données.
+    image: mariadb:11.4
+
+    # Paramètres utilisés par MariaDB pour initialiser une base vide.
+    environment:
+      MARIADB_DATABASE: wordpress
+      MARIADB_USER: wordpress
+      MARIADB_PASSWORD: "${WP_DB_PASSWORD:?Mot de passe WordPress requis}"
+      MARIADB_ROOT_PASSWORD: "${WP_DB_ROOT_PASSWORD:?Mot de passe root MariaDB requis}"
+
+    # Conserve les fichiers de la base entre deux créations du conteneur.
+    volumes:
+      - db_data:/var/lib/mysql
+
+  wordpress:
+    # Image officielle qui fournit WordPress, PHP 8.3 et Apache.
+    image: wordpress:php8.3-apache
+
+    # Demande à Compose de démarrer le conteneur de base en premier.
+    depends_on:
+      - db
+
+    # Relie le port 8081 d’Ubuntu Server au port 80 d’Apache.
+    ports:
+      - "8081:80"
+
+    # Identifiants de connexion à MariaDB.
+    # Sur le réseau créé par Compose, db est le nom du service MariaDB.
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: "${WP_DB_PASSWORD:?Mot de passe WordPress requis}"
+
+    # Conserve les fichiers WordPress, dont les thèmes et les médias.
+    volumes:
+      - wordpress_data:/var/www/html
+
+# Déclare les deux volumes nommés que Docker gère.
+volumes:
+  db_data:
+  wordpress_data:
